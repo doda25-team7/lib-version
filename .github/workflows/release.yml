@@ -21,7 +21,8 @@ jobs:
           distribution: temurin
           java-version: '25'
           server-id: github
-          settings-path: ${{ github.workspace }}
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
 
       - name: Set Maven version from tag
         run: |
@@ -31,4 +32,5 @@ jobs:
       - name: Build and deploy to GitHub Packages
         run: mvn -B -DskipTests deploy
         env:
+          GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
