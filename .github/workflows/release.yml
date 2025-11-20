@@ -33,8 +33,6 @@ jobs:
           BASE=${CURRENT_VERSION/-SNAPSHOT/}
           RELEASE=$BASE
           
-          echo "Release version: $RELEASE" >> $GITHUB_ENV
-          
           MAJOR=$(echo $BASE | cut -d. -f1)
           MINOR=$(echo $BASE | cut -d. -f2)
           PATCH=$(echo $BASE | cut -d. -f3)
