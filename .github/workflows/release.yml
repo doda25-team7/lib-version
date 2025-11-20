@@ -28,6 +28,7 @@ jobs:
         run: |
           CURRENT=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "CURRENT_VERSION=$CURRENT" >> $GITHUB_ENV
+
       - name: Compute release and next snapshot versions
         run: |
           BASE=${CURRENT_VERSION/-SNAPSHOT/}
@@ -46,11 +47,27 @@ jobs:
       - name: Set project version to release version
         run: mvn -B versions:set -DnewVersion=${RELEASE_VERSION}
 
-      - name: Set Maven version from tag
+      - name: Deploy release to GitHub Packages
+        run: mvn -B -DskipTests deploy
+
+      - name: Commit release version
         run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          VERSION=${TAG#v}    
-          mvn -B versions:set -DnewVersion=$VERSION
+         git config user.name "github-actions"
+         git config user.email "actions@github.com"
+         git commit -am "Release ${RELEASE_VERSION}"
+
+      - name: Tag the release
+        run: |
+          git tag "v${RELEASE_VERSION}"
+          git push --tags
+
+      - name: Bump to next snapshot
+        run: mvn -B versions:set -DnewVersion=${NEXT_VERSION}
+
+      - name: Commit next snapshot
+        run: |
+          git commit -am "Start ${NEXT_VERSION}"
+          git push
 
       - name: Build and deploy to GitHub Packages
         run: mvn -B -DskipTests deploy
