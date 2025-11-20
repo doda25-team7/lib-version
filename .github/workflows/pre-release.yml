@@ -41,6 +41,3 @@ jobs:
 
       - name: Set pre-release version
         run: mvn -B versions:set -DnewVersion=${PRE_VERSION}
-
-      - name: Deploy
-        run: mvn -B -DskipTests deploy
