@@ -3,12 +3,13 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -23,11 +24,33 @@ jobs:
           server-id: github
           server-username: GITHUB_ACTOR
           server-password: GITHUB_TOKEN
+      - name: Read current version
+        run: |
+          CURRENT=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "CURRENT_VERSION=$CURRENT" >> $GITHUB_ENV
+      - name: Compute release and next snapshot versions
+        run: |
+          BASE=${CURRENT_VERSION/-SNAPSHOT/}
+          RELEASE=$BASE
+          
+          echo "Release version: $RELEASE" >> $GITHUB_ENV
+          
+          MAJOR=$(echo $BASE | cut -d. -f1)
+          MINOR=$(echo $BASE | cut -d. -f2)
+          PATCH=$(echo $BASE | cut -d. -f3)
+          NEXT_PATCH=$((PATCH+1))
+          NEXT="${MAJOR}.${MINOR}.${NEXT_PATCH}-SNAPSHOT"
+
+          echo "RELEASE_VERSION=$RELEASE" >> $GITHUB_ENV
+          echo "NEXT_VERSION=$NEXT" >> $GITHUB_ENV
+      - name: Set project version to release version
+        run: mvn -B versions:set -DnewVersion=${RELEASE_VERSION}
 
       - name: Set Maven version from tag
         run: |
           TAG=${GITHUB_REF#refs/tags/}
-          VERSION=${TAG#v}             
+          VERSION=${TAG#v}    
+          mvn -B versions:set -DnewVersion=$VERSION
 
       - name: Build and deploy to GitHub Packages
         run: mvn -B -DskipTests deploy
