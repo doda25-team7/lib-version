@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>lib-version</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>app-1.0.0-Francisco-F11-branch-versioning-251120-225957</version>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
