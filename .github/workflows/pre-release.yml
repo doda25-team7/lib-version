@@ -1,0 +1,54 @@
+name: prerelease-branches
+
+on:
+  push:
+    branches:
+      - '**'
+      - '!main'
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      - name: Read base version
+        run: |
+          BASE=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          BASE=${BASE/-SNAPSHOT/}
+          echo "BASE_VERSION=$BASE" >> $GITHUB_ENV
+
+      - name: Build pre-release version
+        run: |
+          BRANCH=$(echo "${GITHUB_REF_NAME}" | tr '/' '-')
+          TIMESTAMP=$(date "+%y%m%d-%H%M%S")
+          VERSION="app-${BASE_VERSION}-${BRANCH}-${TIMESTAMP}"
+          echo "PRE_VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Set pre-release version
+        run: mvn -B versions:set -DnewVersion=${PRE_VERSION}
+
+      - name: Commit release version
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git commit -am "Release ${PRE_VERSION}"
+
+      - name: Tag the release
+        run: |
+          git tag "${PRE_VERSION}"
+          git push --tags
