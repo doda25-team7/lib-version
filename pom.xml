@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>lib-version</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4-SNAPSHOT</version>
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
