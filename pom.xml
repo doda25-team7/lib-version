@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>lib-version</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.3-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
@@ -21,8 +21,16 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
-
     <distributionManagement>
         <repository>
             <id>github</id>

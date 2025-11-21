@@ -1,14 +1,11 @@
 name: release.yml
 on:
-  push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-
+  workflow_dispatch:
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -23,14 +20,49 @@ jobs:
           server-id: github
           server-username: GITHUB_ACTOR
           server-password: GITHUB_TOKEN
-
-      - name: Set Maven version from tag
+      - name: Read current version
         run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          VERSION=${TAG#v}             
+          CURRENT=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "CURRENT_VERSION=$CURRENT" >> $GITHUB_ENV
+
+      - name: Compute release and next snapshot versions
+        run: |
+          BASE=${CURRENT_VERSION/-SNAPSHOT/}
+          RELEASE=$BASE
+          
+          MAJOR=$(echo $BASE | cut -d. -f1)
+          MINOR=$(echo $BASE | cut -d. -f2)
+          PATCH=$(echo $BASE | cut -d. -f3)
+          NEXT_PATCH=$((PATCH+1))
+          NEXT="${MAJOR}.${MINOR}.${NEXT_PATCH}-SNAPSHOT"
+
+          echo "RELEASE_VERSION=$RELEASE" >> $GITHUB_ENV
+          echo "NEXT_VERSION=$NEXT" >> $GITHUB_ENV
+      - name: Set project version to release version
+        run: mvn -B versions:set -DnewVersion=${RELEASE_VERSION}
 
       - name: Build and deploy to GitHub Packages
         run: mvn -B -DskipTests deploy
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit release version
+        run: |
+         git config user.name "github-actions"
+         git config user.email "actions@github.com"
+         git commit -am "Release ${RELEASE_VERSION}"
+
+      - name: Tag the release
+        run: |
+          git tag "v${RELEASE_VERSION}"
+          git push --tags
+
+      - name: Bump to next snapshot
+        run: mvn -B versions:set -DnewVersion=${NEXT_VERSION}
+
+      - name: Commit next snapshot
+        run: |
+          git commit -am "Start ${NEXT_VERSION}"
+          git push
+
